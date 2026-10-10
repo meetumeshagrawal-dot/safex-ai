@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAFEX AI · Industrial Safety Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ambient atmosphere layers -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-scan" aria-hidden="true"></div>
+<div class="bg-vignette" aria-hidden="true"></div>
+
+<!-- ============ BOOT / POWER-ON ============ -->
+<div id="boot">
+  <div class="boot-core">
+    <svg class="boot-reactor" viewBox="0 0 120 120" width="118" height="118">
+      <circle class="br-ring br-ring1" cx="60" cy="60" r="54" fill="none"/>
+      <circle class="br-ring br-ring2" cx="60" cy="60" r="42" fill="none"/>
+      <polygon class="br-hex" points="60,18 96,39 96,81 60,102 24,81 24,39" fill="none"/>
+      <polygon class="br-hex-in" points="60,34 82,47 82,73 60,86 38,73 38,47" fill="none"/>
+      <circle class="br-core" cx="60" cy="60" r="9"/>
+    </svg>
+    <div class="boot-title">SAFEX<span>AI</span></div>
+    <div class="boot-sub">Industrial Safety Intelligence Platform</div>
+    <div class="boot-progress"><div class="boot-bar" id="bootBar"></div></div>
+    <div class="boot-steps" id="bootSteps"></div>
+  </div>
+</div>
+
+<!-- ============ TOP COMMAND BAR ============ -->
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-hex" viewBox="0 0 100 100" width="38" height="38">
+      <polygon points="50,6 89,28 89,72 50,94 11,72 11,28" fill="none" stroke="var(--accent)" stroke-width="5"/>
+      <polygon points="50,24 73,37 73,63 50,76 27,63 27,37" fill="none" stroke="var(--accent)" stroke-width="3" opacity=".55"/>
+      <circle cx="50" cy="50" r="9" fill="var(--accent)"/>
+    </svg>
+    <div class="brand-txt">
+      <div class="brand-name">SAFEX<span>AI</span></div>
+      <div class="brand-tag" id="orgName">Industrial Safety Intelligence</div>
+    </div>
+  </div>
+
+  <div class="plant-gauge-wrap" id="plantIndex">
+    <svg class="plant-gauge" viewBox="0 0 200 116" width="200" height="116">
+      <path class="pg-track" d="M20 104 A 80 80 0 0 1 180 104" fill="none"/>
+      <path class="pg-fill" id="plantArc" d="M20 104 A 80 80 0 0 1 180 104" fill="none"/>
+      <g class="pg-ticks" id="pgTicks"></g>
+    </svg>
+    <div class="pg-readout">
+      <div class="pg-score" id="plantScore">0.0</div>
+      <div class="pg-band" id="plantBand">NOMINAL</div>
+      <div class="pg-label">PLANT HAZARD INDEX</div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="mode-switch" id="modeSwitch">
+      <button data-mode="simulation" class="active"><span class="md-dot"></span>SIM</button>
+      <button data-mode="live" class="live"><span class="md-dot"></span>LIVE CAM</button>
+    </div>
+    <button class="btn" id="camMonitorBtn" style="padding:7px 13px">◱ Cameras</button>
+    <button class="btn" id="siteEditorBtn" style="padding:7px 13px" title="Add floors, draw rooms, place fire-safety assets">⌂ Site</button>
+    <div class="stat-chip vision" id="visionChip" title="Detection model status"><span class="sc-dot"></span><span id="visionText">vision</span></div>
+    <div class="stat-chip sys" id="sysStatus"><span class="sc-dot"></span><span>NOMINAL</span></div>
+    <div class="stat-chip conn" id="conn"><span class="sc-dot"></span><span id="connText">linking</span></div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- ============ MAIN CONSOLE ============ -->
+<main class="grid">
+  <section class="col col-left">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="card livecam-card reveal">
+      <div class="card-head"><h2><span class="hicon">◉</span> Live Camera Feeds</h2>
+        <button class="btn btn-ghost" id="camExpandBtn">Expand ⤢</button></div>
+      <div class="livecam-strip" id="livecamStrip"></div>
+    </div>
+
+    <div class="row2">
+      <div class="card reveal">
+        <div class="card-head"><h2><span class="hicon">〜</span> Plant Hazard Trend</h2>
+          <span class="mono muted" id="trendNow">—</span></div>
+        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="card reveal">
+        <div class="card-head"><h2><span class="hicon">⟡</span> Predictive Risk</h2>
+          <span class="pill pill-accent">FORECAST</span></div>
+        <div id="watchlist" class="watchlist"></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="col col-right">
+    <div class="card floor-card reveal">
+      <div class="card-head">
+        <h2><span class="hicon">▚</span> <span id="floorTitle">Ground Floor</span> · Live Hazard Schematic</h2>
+        <div class="legend">
+          <span><i class="lg-swatch" style="background:var(--normal)"></i>Nominal</span>
+          <span><i class="lg-swatch" style="background:var(--elevated)"></i>Elevated</span>
+          <span><i class="lg-swatch" style="background:var(--high)"></i>High</span>
+          <span><i class="lg-swatch" style="background:var(--critical)"></i>Critical</span>
+          <span class="lg-route"><i></i>Evac route</span>
+          <span class="lg-worker"><i></i>Worker</span>
+        </div>
+      </div>
+
+      <!-- floor selector: one tab per level, each showing that level's worst
+           hazard and headcount so a fire upstairs is never invisible -->
+      <div class="floor-tabs" id="floorTabs"></div>
+
+      <div class="floor-wrap">
+        <div id="floor" class="floor-stack"></div>
+        <canvas id="fxCanvas" class="fx-canvas"></canvas>
+        <div class="floor-corners"><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="floor-foot">
+        <span class="mono" id="floorHint">◄ SELECT ZONE TO INSPECT · USE SCENARIO CONSOLE TO INJECT EVENTS ►</span>
+        <label class="follow-toggle" title="Jump to whichever level is in trouble">
+          <input type="checkbox" id="followHazard" checked><span>AUTO-FOLLOW HAZARD</span>
+        </label>
+        <label class="follow-toggle" title="Show each camera's live view inside the room it watches">
+          <input type="checkbox" id="planFeeds" checked><span>CAMERAS ON PLAN</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card compliance-card reveal">
+      <div class="card-head"><h2><span class="hicon">⛨</span> Fire Safety Compliance</h2>
+        <div class="head-tools">
+          <button class="btn btn-ghost" id="compReportBtn" title="Open the periodic compliance report">▤ Report</button>
+          <span class="pill" id="compBand">—</span>
+        </div></div>
+      <div class="comp-head">
+        <div class="comp-score"><span id="compScore">100</span><i>/100</i></div>
+        <div class="comp-floors" id="compFloors"></div>
+      </div>
+      <div id="compViolations" class="comp-violations"></div>
+
+      <!-- automated actions: shown before they happen, never after -->
+      <div class="act-block">
+        <div class="act-head">
+          <span>Automated actions</span>
+          <label class="act-arm" title="Automation is off until it is armed">
+            <input type="checkbox" id="actArm"><span>ARMED</span></label>
+        </div>
+        <div id="actList" class="act-list"></div>
+        <div class="act-boundary" id="actBoundary"></div>
+      </div>
+    </div>
+
+    <div class="card alerts-card reveal">
+      <div class="card-head"><h2><span class="hicon">◭</span> Smart Alerts</h2>
+        <div class="head-tools">
+          <div class="voice-toggle">
+            <label class="switch"><input type="checkbox" id="voiceToggle" checked><span class="slider"></span></label>
+            <span>Voice</span>
+          </div>
+          <span class="pill" id="alertCount">0</span>
+        </div></div>
+      <div id="alerts" class="alerts"></div>
+    </div>
+
+    <div class="card copilot reveal">
+      <div class="card-head"><h2><span class="hicon">◈</span> AI Safety Copilot</h2>
+        <span class="pill pill-live" id="copilotEngine">grounded</span></div>
+      <div id="chat" class="chat"></div>
+      <div class="chat-suggest" id="chatSuggest"></div>
+      <div class="chat-input">
+        <input id="chatBox" type="text" placeholder="Ask about status, risk, evacuation…" autocomplete="off"/>
+        <button id="chatSend" aria-label="Send">➤</button>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-head"><h2><span class="hicon">▤</span> Incident Timeline</h2>
+        <span class="pill" id="incCount">0 active</span></div>
+      <div id="incidents" class="incidents"></div>
+    </div>
+
+    <!-- drill controls: simulation mode only (hidden in Live Camera mode) -->
+    <div class="card console reveal" id="consoleCard">
+      <div class="card-head"><h2><span class="hicon">⎔</span> Scenario Console</h2>
+        <button class="btn btn-ghost" id="resetBtn">↺ Reset</button></div>
+      <div class="console-body">
+        <div class="field">
+          <label>Target zone</label>
+          <div class="select-wrap"><select id="scZone"></select></div>
+        </div>
+        <div class="field">
+          <label>Inject event</label>
+          <div class="event-btns" id="eventBtns">
+            <button data-kind="fire"><span>🔥</span>Fire</button>
+            <button data-kind="gas_leak"><span>☣</span>Gas leak</button>
+            <button data-kind="overheat"><span>🌡</span>Overheat</button>
+            <button data-kind="mechanical"><span>⚙</span>Mechanical</button>
+            <button data-kind="smoke"><span>💨</span>Smoke</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="drawer" class="drawer"><div class="drawer-inner" id="drawerInner"></div></div>
+<div id="scrim" class="scrim"></div>
+
+<!-- ============ CAMERA MONITOR (full-screen surveillance grid) ============ -->
+<div id="camModal" class="cam-modal">
+  <div class="cam-modal-head">
+    <div>
+      <h2><span class="hicon">◉</span> Camera Monitor</h2>
+      <div class="sub" id="camModalSub">Multi-camera plant surveillance · YOLOv8 fire · smoke · person detection</div>
+    </div>
+    <div style="display:flex;gap:9px;align-items:center">
+      <button class="btn" id="webcamOpenBtn" title="Stream your device's webcam to the plant">📷 Use My Webcam</button>
+      <button class="cam-close" id="camCloseBtn" aria-label="Close">✕</button>
+    </div>
+  </div>
+  <div class="cam-filters" id="camFilters"></div>
+  <div class="cam-grid" id="camGrid"></div>
+</div>
+
+<!-- ============ BROWSER WEBCAM (streams visitor's camera to backend) ============ -->
+<div id="webcamModal" class="cam-modal">
+  <div class="cam-modal-head">
+    <div>
+      <h2><span class="hicon">📷</span> My Webcam → Plant Zone</h2>
+      <div class="sub" id="webcamSub">Your browser camera is analysed by the server's YOLO models in real time</div>
+    </div>
+    <button class="cam-close" id="webcamCloseBtn" aria-label="Close">✕</button>
+  </div>
+  <div class="webcam-body">
+    <div class="webcam-controls">
+      <div class="field">
+        <label>Assign this camera to room</label>
+        <div class="select-wrap"><select id="webcamZone"></select></div>
+      </div>
+      <button class="btn" id="webcamStart">▶ Start Camera</button>
+      <button class="btn" id="webcamStop" style="display:none">■ Stop Camera</button>
+      <div class="webcam-stat" id="webcamStat">Idle — pick a room and start your camera.</div>
+      <div class="webcam-hint">Works on the deployed site too: your browser captures the video and
+        sends frames to the server, which runs fire / smoke / person detection and sends the boxes back.
+        Detections drive that room's hazard, alerts and evacuation (in ◉ LIVE CAM mode).</div>
+    </div>
+    <div class="webcam-stage">
+      <video id="webcamVideo" autoplay playsinline muted></video>
+      <canvas id="webcamOverlay"></canvas>
+      <div class="webcam-badge" id="webcamBadge" style="display:none"><span class="rec"></span>LIVE · <span id="webcamFps">0</span> FPS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CAMERA -> PLAN CALIBRATION ============ -->
+<div id="calModal" class="cam-modal cal-modal">
+  <div class="cam-modal-head">
+    <div>
+      <h2><span class="hicon">⊹</span> Calibrate camera to plan · <span id="calTitle"></span></h2>
+      <div class="sub">Click four spots you can identify in both views. After this the
+        platform knows where in the building what it sees actually is — and can
+        measure a corridor in metres instead of percentages.</div>
+    </div>
+    <button class="cam-close" id="calClose" aria-label="Close">✕</button>
+  </div>
+  <div class="cal-body">
+    <div class="cal-side">
+      <div class="cal-label">Camera view</div>
+      <div id="calShot" class="cal-shot"></div>
+    </div>
+    <div class="cal-side">
+      <div class="cal-label">Floor plan</div>
+      <div id="calPlan" class="cal-plan"></div>
+    </div>
+    <div class="cal-panel">
+      <div id="calStatus" class="cal-status"></div>
+      <div id="calPairs" class="cal-pairs"></div>
+      <div class="cal-actions">
+        <button class="btn" id="calUndo">↶ Undo</button>
+        <button class="btn" id="calClear">Clear</button>
+      </div>
+      <button class="btn" id="calSave" disabled>Save calibration</button>
+      <div class="ed-hint">Anything flat and identifiable works: corridor corners,
+        a doorway, floor tiles. Points far apart give a better fit than points
+        bunched together.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SITE EDITOR (floors, rooms, fire-safety assets) ============ -->
+<div id="siteEditor" class="cam-modal ed-modal">
+  <div class="cam-modal-head">
+    <div>
+      <h2><span class="hicon">⌂</span> Site Editor · <span id="edTitle">Site</span></h2>
+      <div class="sub">Draw the building — floors, rooms, stair cores and fire-safety assets.
+        Every change is live within a moment; no restart.</div>
+    </div>
+    <button class="cam-close" id="edClose" aria-label="Close">✕</button>
+  </div>
+  <div class="ed-body">
+    <aside class="ed-left">
+      <div class="ed-side-title">Floors</div>
+      <div id="edFloors" class="ed-floors"></div>
+      <div id="edProblems" class="ed-problems"></div>
+    </aside>
+    <section class="ed-center">
+      <div id="edTools" class="ed-tools"></div>
+      <div class="ed-stage-wrap"><div id="edStage" class="ed-stage"></div></div>
+      <div class="ed-legend">Drag a room to move it · drag its corner to resize ·
+        pick a tool and drag on the plan to add · Delete removes the selection</div>
+    </section>
+    <aside class="ed-right" id="edProps"></aside>
+  </div>
+  <input type="file" id="edPlanFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+</div>
+
+<script src="/js/app.js"></script>
+<script src="/js/floor.js"></script>
+<script src="/js/panels.js"></script>
+<script src="/js/cameras.js"></script>
+<script src="/js/webcam.js"></script>
+<script src="/js/copilot.js"></script>
+<script src="/js/controls.js"></script>
+<script src="/js/editor.js"></script>
+<script src="/js/calibrate.js"></script>
+</body>
+</html>

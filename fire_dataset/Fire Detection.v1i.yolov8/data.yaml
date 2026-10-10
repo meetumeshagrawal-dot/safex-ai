@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 2
+names: ['fire', 'smoke']
+
+roboflow:
+  workspace: fire-detection-uwol7
+  project: fire-detection-8icva
+  version: 1
+  license: Public Domain
+  url: https://universe.roboflow.com/fire-detection-uwol7/fire-detection-8icva/dataset/1

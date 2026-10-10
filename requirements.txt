@@ -1,0 +1,29 @@
+# ============================================================
+# SAFEX AI — runs locally AND on Render / Railway / etc.
+# NOTE: this repo pins Python 3.11 via the .python-version file,
+# because torch + ultralytics have reliable wheels there.
+# (Render's newer default is Python 3.14, which has NO torch 2.2
+#  wheel — that was the earlier build failure.)
+# ============================================================
+
+# ---- core (always required) ----
+fastapi>=0.110
+uvicorn[standard]>=0.27
+jinja2>=3.1
+numpy>=1.26,<2.2
+
+# HEADLESS OpenCV — plain opencv-python crashes on servers with
+# "libGL.so.1: cannot open shared object file". Same cv2 API.
+opencv-python-headless>=4.9
+
+# ---- YOLOv8 detection (fire / smoke / person) ----
+# CPU-only torch (the default wheel bundles ~2 GB of CUDA and breaks
+# the build). Versions are left UNPINNED so pip picks a wheel that
+# matches the active Python — pinning torch==2.2.2 failed on Py 3.14.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.2
+torchvision>=0.17
+ultralytics>=8.1
+
+# Optional (local only): offline OS voice. Browser TTS is used in the UI.
+# pyttsx3>=2.90
