@@ -28,6 +28,15 @@ It is built to look and behave like software that could be deployed in a real
 plant control room today — while running entirely on a laptop with **one
 command and zero hardware**.
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/dashboard.png" alt="SAFEX AI dashboard in nominal simulation mode" width="49%" />
+  <img src="screenshots/fire-response.png" alt="SAFEX AI dashboard responding to a simulated fire in the Canteen" width="49%" />
+</p>
+
+<p align="center"><em>Nominal monitoring (left) and a simulated fire response with live risk scoring and alerts (right).</em></p>
+
 ---
 
 ## Against the brief
